@@ -17,6 +17,20 @@ edit 151779 Add new feature
 x git rex 2332c1 # Automatic code reformatting
 ```
 
+Note that rex only supports scripts in a [Markdown fenced code block] with
+[bash syntax highlighting]:
+
+````
+```bash
+# Code to execute needs to go in a section like this in your commit message
+poetry run black .
+```
+````
+
+[Markdown fenced code block]: https://www.markdownguide.org/extended-syntax/#fenced-code-blocks
+[bash syntax highlighting]: https://www.markdownguide.org/extended-syntax/#syntax-highlighting
+
+
 Installing
 ----------
 
