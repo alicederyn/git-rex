@@ -13,6 +13,7 @@ import sys
 
 from docopt import docopt
 from git_rex import git
+from subprocess import call
 
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
@@ -74,7 +75,12 @@ def reexecute(commit_rev: str):
             sys.exit(64)
         commit = git.Commit(commit_rev)
         script = extract_script(commit.message)
-        print(script)
+        for line in script:
+            resultcode = call(line, shell=True)
+            if resultcode != 0:
+                sys.exit(resultcode)
+        git.add_all()
+        git.commit_with_meta_from(commit)
     except NoCodeFound:
         print("fatal: No code section found in commit", file=sys.stderr)
         sys.exit(64)

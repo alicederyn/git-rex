@@ -20,6 +20,14 @@ def is_clean_repo() -> bool:
     return status == b""
 
 
+def add_all() -> None:
+    git("add", "-A")
+
+
+def commit_with_meta_from(commit: "Commit") -> None:
+    git("commit", "-C", commit.hash)
+
+
 class Commit:
     """Wrapper around Git commit commands.
 
