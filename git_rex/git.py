@@ -7,6 +7,19 @@ class GitFailure(Exception):
         self.message = message
 
 
+def git(*args: str) -> bytes:
+    p = Popen(["git", *args], stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    if p.returncode != 0:
+        raise GitFailure(stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: "))
+    return stdout
+
+
+def is_clean_repo() -> bool:
+    status = git("status", "--porcelain")
+    return status == b""
+
+
 class Commit:
     """Wrapper around Git commit commands.
 
@@ -22,7 +35,7 @@ class Commit:
             raise GitFailure(
                 stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: ")
             )
-        self.hash = stdout.decode("ascii").strip()
+        self.hash = git("rev-parse", rev).decode("ascii").strip()
 
     @cached_property
     def message(self) -> bytes:

@@ -68,6 +68,10 @@ def extract_script(message: str):
 
 def reexecute(commit_rev: str):
     try:
+        if not git.is_clean_repo():
+            print("error: cannot reexecute: You have unstaged changes.")
+            print("error: Please commit or stash them.")
+            sys.exit(64)
         commit = git.Commit(commit_rev)
         script = extract_script(commit.message)
         print(script)
