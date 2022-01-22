@@ -21,6 +21,10 @@ Note that rex only supports scripts in a [Markdown fenced code block] with
 [bash syntax highlighting]:
 
 ````
+Automatic code reformatting
+
+Reformat all code with black
+
 ```bash
 # Code to execute needs to go in a section like this in your commit message
 poetry run black .
