@@ -17,3 +17,15 @@ edit 151779 Add new feature
 x git rex 2332c1 # Automatic code reformatting
 ```
 
+Installing
+----------
+
+To install, use [pipx]:
+
+```bash
+pip install pipx
+export PATH="$PATH:$HOME/.local/bin"
+pipx install git+https://github.com/alicederyn/git-rex.git
+```
+
+[pipx]: https://pipxproject.github.io/pipx/
