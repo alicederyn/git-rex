@@ -1,3 +1,4 @@
+import os
 import re
 from subprocess import check_call
 
@@ -14,3 +15,9 @@ def test_commit(temp_git_repo):
 
     assert c.message == "Added a test file\n"
     assert re.match(r"^[0-9a-f]{40}$", c.hash)
+
+
+def test_top_level(temp_git_repo):
+    os.mkdir("subdir")
+    os.chdir("subdir")
+    assert git.top_level() == temp_git_repo

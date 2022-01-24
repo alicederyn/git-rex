@@ -1,4 +1,5 @@
 from functools import cached_property
+from pathlib import Path
 from subprocess import PIPE, Popen, check_output
 
 
@@ -26,6 +27,10 @@ def add_all() -> None:
 
 def commit_with_meta_from(commit: "Commit") -> None:
     git("commit", "-C", commit.hash)
+
+
+def top_level() -> Path:
+    return Path(git("rev-parse", "--show-toplevel").decode("utf-8").removesuffix("\n"))
 
 
 class Commit:
