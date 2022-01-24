@@ -10,11 +10,11 @@ COMMIT   Commit to reexecute
 
 import re
 import sys
-
-from docopt import docopt
-from git_rex import git
 from subprocess import call
 
+from docopt import docopt
+
+from git_rex import git
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 

@@ -1,6 +1,6 @@
 """Verify the basic invocation of rex, `git rex COMMIT`."""
 
-from subprocess import Popen, PIPE, STDOUT, check_call, check_output
+from subprocess import PIPE, STDOUT, Popen, check_call, check_output
 
 COMMIT_MESSAGE = """An example git-rex commit
 
