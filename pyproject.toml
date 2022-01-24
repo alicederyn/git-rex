@@ -16,9 +16,15 @@ black = "^21.12b0"
 pytest = "^6.2.5"
 isort = "^5.10.1"
 flake8 = "^4.0.1"
+mypy = "^0.931"
 
 [tool.isort]
 profile = "black"
+
+[tool.mypy]
+[[tool.mypy.overrides]]
+module = "docopt"
+ignore_missing_imports = "True"  # See https://github.com/jazzband/docopt-ng/issues/18
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
