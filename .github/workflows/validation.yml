@@ -53,3 +53,6 @@ jobs:
     - name: Check formatting with black
       run: |
         poetry run black --check .
+    - name: Check import ordering with isort
+      run: |
+        poetry run isort --check .

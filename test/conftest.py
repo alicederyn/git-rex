@@ -1,8 +1,8 @@
 import os
-from packaging import version
 from subprocess import check_call, check_output
 
 import pytest
+from packaging import version
 
 
 def assert_git_version(minimum_version):
