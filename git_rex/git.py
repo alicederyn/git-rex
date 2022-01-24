@@ -39,7 +39,7 @@ class Commit:
         self.hash = git("rev-parse", rev).decode("ascii").strip()
 
     @cached_property
-    def message(self) -> bytes:
+    def message(self) -> str:
         return check_output(
             [
                 "git",

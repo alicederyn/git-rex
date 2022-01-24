@@ -50,6 +50,9 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install
+    - name: Check typing with mypy
+      run: |
+        poetry run mypy .
     - name: Check style with flake8
       run: |
         poetry run flake8
