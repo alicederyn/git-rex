@@ -29,13 +29,6 @@ def commit_with_meta_from(commit: "Commit") -> None:
 
 
 class Commit:
-    """Wrapper around Git commit commands.
-
-    >>> c = Commit("0e507f394bd3a3a4b96fe3208d14aab469ce1ab9")
-    >>> c.message
-    'Initial gitignore\\n'
-    """
-
     def __init__(self, rev: str):
         p = Popen(["git", "rev-parse", rev], stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
