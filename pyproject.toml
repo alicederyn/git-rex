@@ -22,6 +22,23 @@ mypy = "^0.931"
 profile = "black"
 
 [tool.mypy]
+warn_redundant_casts = "True"
+warn_unused_configs = "True"
+[[tool.mypy.overrides]]
+module = "git_rex"
+# See https://github.com/python/mypy/issues/11401
+check_untyped_defs = "True"
+disallow_any_generics = "True"
+disallow_incomplete_defs = "True"
+disallow_subclassing_any = "True"
+disallow_untyped_calls = "True"
+disallow_untyped_decorators = "True"
+disallow_untyped_defs = "True"
+no_implicit_optional = "True"
+no_implicit_reexport = "True"
+strict_equality = "True"
+warn_return_any = "True"
+warn_unused_ignores = "True"
 [[tool.mypy.overrides]]
 module = "docopt"
 ignore_missing_imports = "True"  # See https://github.com/jazzband/docopt-ng/issues/18
