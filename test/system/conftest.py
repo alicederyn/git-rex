@@ -1,5 +1,4 @@
 import sys
-from runpy import run_module
 
 import pytest
 

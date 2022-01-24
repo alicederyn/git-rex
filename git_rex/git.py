@@ -1,5 +1,5 @@
 from functools import cached_property
-from subprocess import PIPE, CalledProcessError, Popen, check_output
+from subprocess import PIPE, Popen, check_output
 
 
 class GitFailure(Exception):
