@@ -3,6 +3,8 @@ git re-execute
 
 Alternative to git cherry-pick that finds and runs commands in the commit message, instead of reapplying the original diff. This allows authors to document automated code steps, and then reapply the code if a simple rebase fails.
 
+[![Validation status page](https://github.com/alicederyn/git-rex/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/alicederyn/git-rex/actions/workflows/validation.yml?query=branch%3Amain)
+
 For instance, suppose `git rebase -i` gives the following script:
 
 ```
