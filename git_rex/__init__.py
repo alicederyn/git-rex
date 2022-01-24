@@ -29,7 +29,7 @@ class ScriptError(Exception):
         self.message = message
 
 
-def extract_script(message: str):
+def extract_script(message: str) -> tuple[str, ...]:
     """Extracts code from between triple-tick blocks
 
     >>> commit_message = '''Sample commit
@@ -67,7 +67,7 @@ def extract_script(message: str):
     return tuple(code_lines)
 
 
-def reexecute(commit_rev: str):
+def reexecute(commit_rev: str) -> None:
     try:
         if not git.is_clean_repo():
             print("error: cannot reexecute: You have unstaged changes.")
