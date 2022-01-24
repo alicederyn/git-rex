@@ -8,6 +8,7 @@ Usage: git-rex COMMIT
 COMMIT   Commit to reexecute
 """
 
+import os
 import re
 import sys
 from subprocess import call
@@ -93,4 +94,5 @@ def reexecute(commit_rev: str) -> None:
 
 def main() -> None:
     options = docopt(__doc__)
+    os.chdir(git.top_level())
     reexecute(commit_rev=options["COMMIT"])
