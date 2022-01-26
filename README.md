@@ -44,7 +44,7 @@ Forwards-compatibility
 
 git-rex is currently in pre-release state, meaning **there is no guarantee that commits that work with one version will work with the next**. In particular, the following hold, but will not in future releases:
 
-* Each line of a script section is currently run in a separate bash shell ([#2]), meaning global changes (like environment variables, or the current directory) will not propagate from one line to the next. The intent is for each code *block* to execute in a fresh shell. If you want to write forwards-compatible scripts, but need to change directory in your script, put your script line into a subshell by wrapping it in brackets.
+* Each line of a script section is currently run in a separate bash shell ([#2]), meaning global changes (like environment variables, or the current directory) will not propagate from one line to the next. The intent is for each code *block* to execute in a fresh shell, as a script (with `set -e` and `set -o pipefail` set to ensure errors are noticed). If you want to write forwards-compatible scripts, but need to change directory in your script, put your script line into a subshell by wrapping it in brackets.
 * git-rex actually uses `/bin/sh` at the moment, not bash ([#3]).
 
 [#1]: https://github.com/alicederyn/git-rex/issues/1
