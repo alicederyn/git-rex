@@ -2,6 +2,7 @@ name: PR standards
 
 on:
   pull_request:
+    types: [opened, synchronize, edited, reopened]
     branches: [ main ]
 
 jobs:
