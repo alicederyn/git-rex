@@ -24,6 +24,10 @@ class NoCodeFound(Exception):
     pass
 
 
+class UnterminatedCodeBlock(Exception):
+    pass
+
+
 class ScriptError(Exception):
     def __init__(self, lineno: int, message: str):
         self.lineno = lineno
@@ -48,13 +52,11 @@ def extract_script(message: str) -> tuple[str, ...]:
     in_code_block = False
     lines = message.splitlines()
     code_lines = []
-    for lineno, line in enumerate(lines):
+    for lineno, line in enumerate(lines, start=1):
         if not in_code_block:
             if m := CODE_BLOCK.match(line):
                 if m.group(1) != "bash":
-                    raise ScriptError(
-                        lineno, "Code sections must be specify bash syntax"
-                    )
+                    raise ScriptError(lineno, "Code sections must specify bash syntax")
                 in_code_block = True
         else:
             if m := CODE_BLOCK.match(line):
@@ -63,8 +65,10 @@ def extract_script(message: str) -> tuple[str, ...]:
                 in_code_block = False
             elif line.strip():
                 code_lines.append(line.strip())
+    if in_code_block:
+        raise UnterminatedCodeBlock()
     if not code_lines:
-        raise NoCodeFound
+        raise NoCodeFound()
     return tuple(code_lines)
 
 
@@ -84,6 +88,9 @@ def reexecute(commit_rev: str) -> None:
         git.commit_with_meta_from(commit)
     except NoCodeFound:
         print("fatal: No code section found in commit", file=sys.stderr)
+        sys.exit(64)
+    except UnterminatedCodeBlock:
+        print("fatal: Code block not terminated in commit message", file=sys.stderr)
         sys.exit(64)
     except ScriptError as e:
         print(f"fatal: {e.lineno}: {e.message}", file=sys.stderr)
