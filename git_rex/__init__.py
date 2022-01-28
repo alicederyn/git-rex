@@ -18,6 +18,7 @@ from docopt import docopt
 from git_rex import git
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
+TEMP_REX_SCRIPT = ".git/REX_SCRIPT"
 
 
 class NoCodeFound(Exception):
@@ -38,7 +39,7 @@ class UnterminatedCodeBlock(Exception):
     pass
 
 
-def extract_script(message: str) -> tuple[str, ...]:
+def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     """Extracts code from between triple-tick blocks
 
     >>> commit_message = '''Sample commit
@@ -49,13 +50,18 @@ def extract_script(message: str) -> tuple[str, ...]:
     ... run_my_code thing
     ... and_my_other thing
     ... ```
+    ...
+    ... ```bash
+    ... run_a_third thing
+    ... ```
     ... '''
-    >>> extract_script(commit_message)
-    ('run_my_code thing', 'and_my_other thing')
+    >>> extract_scripts(commit_message)
+    (('run_my_code thing', 'and_my_other thing'), ('run_a_third thing',))
     """
     in_code_block = False
     lines = message.splitlines()
-    code_lines = []
+    code_blocks = []
+    code_lines: list[str] = []
     for lineno, line in enumerate(lines, start=1):
         if not in_code_block:
             if m := CODE_BLOCK.match(line):
@@ -66,14 +72,16 @@ def extract_script(message: str) -> tuple[str, ...]:
             if m := CODE_BLOCK.match(line):
                 if m.group(1):
                     raise UnexpectedCodeBlock(lineno)
+                code_blocks.append(tuple(code_lines))
+                code_lines.clear()
                 in_code_block = False
             elif line.strip():
                 code_lines.append(line.strip())
     if in_code_block:
         raise UnterminatedCodeBlock()
-    if not code_lines:
+    if not code_blocks:
         raise NoCodeFound()
-    return tuple(code_lines)
+    return tuple(code_blocks)
 
 
 def reexecute(commit_rev: str) -> None:
@@ -83,11 +91,16 @@ def reexecute(commit_rev: str) -> None:
             print("error: Please commit or stash them.")
             sys.exit(64)
         commit = git.Commit(commit_rev)
-        script = extract_script(commit.message)
-        for line in script:
-            resultcode = call(line, shell=True)
-            if resultcode != 0:
-                sys.exit(resultcode)
+        scripts = extract_scripts(commit.message)
+        try:
+            for script in scripts:
+                with open(TEMP_REX_SCRIPT, "w") as f:
+                    print("\n".join(script), file=f)
+                resultcode = call(["bash", TEMP_REX_SCRIPT])
+                if resultcode != 0:
+                    sys.exit(resultcode)
+        finally:
+            os.remove(TEMP_REX_SCRIPT)
         git.add_all()
         git.commit_with_meta_from(commit)
     except NoCodeFound:
