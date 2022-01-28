@@ -11,26 +11,35 @@ COMMIT   Commit to reexecute
 import os
 import re
 import sys
-from subprocess import call
+from subprocess import DEVNULL, call
 
 from docopt import docopt
 
 from git_rex import git
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
+TEMP_REX_SCRIPT = ".git/REX_SCRIPT"
 
 
 class NoCodeFound(Exception):
     pass
 
 
-class ScriptError(Exception):
-    def __init__(self, lineno: int, message: str):
+class UnsupportedCodeSyntax(Exception):
+    def __init__(self, lineno: int):
         self.lineno = lineno
-        self.message = message
 
 
-def extract_script(message: str) -> tuple[str, ...]:
+class UnexpectedCodeBlock(Exception):
+    def __init__(self, lineno: int):
+        self.lineno = lineno
+
+
+class UnterminatedCodeBlock(Exception):
+    pass
+
+
+def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     """Extracts code from between triple-tick blocks
 
     >>> commit_message = '''Sample commit
@@ -41,31 +50,38 @@ def extract_script(message: str) -> tuple[str, ...]:
     ... run_my_code thing
     ... and_my_other thing
     ... ```
+    ...
+    ... ```bash
+    ... run_a_third thing
+    ... ```
     ... '''
-    >>> extract_script(commit_message)
-    ('run_my_code thing', 'and_my_other thing')
+    >>> extract_scripts(commit_message)
+    (('run_my_code thing', 'and_my_other thing'), ('run_a_third thing',))
     """
     in_code_block = False
     lines = message.splitlines()
-    code_lines = []
-    for lineno, line in enumerate(lines):
+    code_blocks = []
+    code_lines: list[str] = []
+    for lineno, line in enumerate(lines, start=1):
         if not in_code_block:
             if m := CODE_BLOCK.match(line):
                 if m.group(1) != "bash":
-                    raise ScriptError(
-                        lineno, "Code sections must be specify bash syntax"
-                    )
+                    raise UnsupportedCodeSyntax(lineno)
                 in_code_block = True
         else:
             if m := CODE_BLOCK.match(line):
                 if m.group(1):
-                    raise ScriptError(lineno, "Unexpected start of new code section")
+                    raise UnexpectedCodeBlock(lineno)
+                code_blocks.append(tuple(code_lines))
+                code_lines.clear()
                 in_code_block = False
             elif line.strip():
                 code_lines.append(line.strip())
-    if not code_lines:
-        raise NoCodeFound
-    return tuple(code_lines)
+    if in_code_block:
+        raise UnterminatedCodeBlock()
+    if not code_blocks:
+        raise NoCodeFound()
+    return tuple(code_blocks)
 
 
 def reexecute(commit_rev: str) -> None:
@@ -75,18 +91,30 @@ def reexecute(commit_rev: str) -> None:
             print("error: Please commit or stash them.")
             sys.exit(64)
         commit = git.Commit(commit_rev)
-        script = extract_script(commit.message)
-        for line in script:
-            resultcode = call(line, shell=True)
-            if resultcode != 0:
-                sys.exit(resultcode)
+        scripts = extract_scripts(commit.message)
+        try:
+            for script in scripts:
+                with open(TEMP_REX_SCRIPT, "w") as f:
+                    print("set -eo pipefail", file=f)
+                    print("\n".join(script), file=f)
+                resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
+                if resultcode != 0:
+                    sys.exit(resultcode)
+        finally:
+            os.remove(TEMP_REX_SCRIPT)
         git.add_all()
         git.commit_with_meta_from(commit)
     except NoCodeFound:
         print("fatal: No code section found in commit", file=sys.stderr)
         sys.exit(64)
-    except ScriptError as e:
-        print(f"fatal: {e.lineno}: {e.message}", file=sys.stderr)
+    except UnsupportedCodeSyntax as e:
+        print(f"fatal: {e.lineno}: Code sections must specify bash syntax")
+        sys.exit(64)
+    except UnexpectedCodeBlock as e:
+        print(f"fatal: {e.lineno}: Unexpected start of new code section")
+        sys.exit(64)
+    except UnterminatedCodeBlock:
+        print("fatal: Code block not terminated in commit message", file=sys.stderr)
         sys.exit(64)
     except git.GitFailure as e:
         print(f"fatal: {e.message}", file=sys.stderr)

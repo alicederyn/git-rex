@@ -34,6 +34,9 @@ poetry run black .
 ````
 
 Scripts are always run from the repository top level, not the directory `git rex` is run in.
+Each script block is invoked as a separate bash script, meaning global changes (like environment
+variables, or directory changes) persist until the end of a code black. Each script is run with
+`set -e` and `set -o pipefail`, so failures will not be silently ignored.
 
 [Markdown fenced code block]: https://www.markdownguide.org/extended-syntax/#fenced-code-blocks
 [bash syntax highlighting]: https://www.markdownguide.org/extended-syntax/#syntax-highlighting
@@ -42,14 +45,7 @@ Scripts are always run from the repository top level, not the directory `git rex
 Forwards-compatibility
 ----------------------
 
-git-rex is currently in pre-release state, meaning **there is no guarantee that commits that work with one version will work with the next**. In particular, the following hold, but will not in future releases:
-
-* Each line of a script section is currently run in a separate bash shell ([#2]), meaning global changes (like environment variables, or the current directory) will not propagate from one line to the next. The intent is for each code *block* to execute in a fresh shell, as a script (with `set -e` and `set -o pipefail` set to ensure errors are noticed). If you want to write forwards-compatible scripts, but need to change directory in your script, put your script line into a subshell by wrapping it in brackets.
-* git-rex actually uses `/bin/sh` at the moment, not bash ([#3]).
-
-[#1]: https://github.com/alicederyn/git-rex/issues/1
-[#2]: https://github.com/alicederyn/git-rex/issues/2
-[#3]: https://github.com/alicederyn/git-rex/issues/3
+git-rex is currently in pre-release state, meaning **there is no guarantee that commits that work with one version will work with the next**, though no major changes are currently anticipated.
 
 
 Installing
