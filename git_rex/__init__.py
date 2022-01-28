@@ -24,14 +24,18 @@ class NoCodeFound(Exception):
     pass
 
 
+class UnsupportedCodeSyntax(Exception):
+    def __init__(self, lineno: int):
+        self.lineno = lineno
+
+
+class UnexpectedCodeBlock(Exception):
+    def __init__(self, lineno: int):
+        self.lineno = lineno
+
+
 class UnterminatedCodeBlock(Exception):
     pass
-
-
-class ScriptError(Exception):
-    def __init__(self, lineno: int, message: str):
-        self.lineno = lineno
-        self.message = message
 
 
 def extract_script(message: str) -> tuple[str, ...]:
@@ -56,12 +60,12 @@ def extract_script(message: str) -> tuple[str, ...]:
         if not in_code_block:
             if m := CODE_BLOCK.match(line):
                 if m.group(1) != "bash":
-                    raise ScriptError(lineno, "Code sections must specify bash syntax")
+                    raise UnsupportedCodeSyntax(lineno)
                 in_code_block = True
         else:
             if m := CODE_BLOCK.match(line):
                 if m.group(1):
-                    raise ScriptError(lineno, "Unexpected start of new code section")
+                    raise UnexpectedCodeBlock(lineno)
                 in_code_block = False
             elif line.strip():
                 code_lines.append(line.strip())
@@ -89,11 +93,14 @@ def reexecute(commit_rev: str) -> None:
     except NoCodeFound:
         print("fatal: No code section found in commit", file=sys.stderr)
         sys.exit(64)
+    except UnsupportedCodeSyntax as e:
+        print(f"fatal: {e.lineno}: Code sections must specify bash syntax")
+        sys.exit(64)
+    except UnexpectedCodeBlock as e:
+        print(f"fatal: {e.lineno}: Unexpected start of new code section")
+        sys.exit(64)
     except UnterminatedCodeBlock:
         print("fatal: Code block not terminated in commit message", file=sys.stderr)
-        sys.exit(64)
-    except ScriptError as e:
-        print(f"fatal: {e.lineno}: {e.message}", file=sys.stderr)
         sys.exit(64)
     except git.GitFailure as e:
         print(f"fatal: {e.message}", file=sys.stderr)
