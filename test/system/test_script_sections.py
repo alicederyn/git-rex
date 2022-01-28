@@ -73,3 +73,18 @@ def test_stop_at_first_failure(rex, temp_git_repo):
 
     # Verify second line was not run
     assert not os.path.exists("file.txt")
+
+
+PIPE_FAILS_COMMIT_MESSAGE = """Pipe fails
+
+```bash
+(echo one && echo two && false) | grep t > file.txt
+```
+"""
+
+
+def test_fail_if_any_pipe_component_fails(rex, temp_git_repo):
+    check_call(["git", "commit", "--allow-empty", "-m", PIPE_FAILS_COMMIT_MESSAGE])
+    COMMIT = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
+    with pytest.raises(SystemExit):
+        rex(COMMIT)

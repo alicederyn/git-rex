@@ -95,7 +95,7 @@ def reexecute(commit_rev: str) -> None:
         try:
             for script in scripts:
                 with open(TEMP_REX_SCRIPT, "w") as f:
-                    print("set -e", file=f)
+                    print("set -eo pipefail", file=f)
                     print("\n".join(script), file=f)
                 resultcode = call(["bash", TEMP_REX_SCRIPT])
                 if resultcode != 0:
