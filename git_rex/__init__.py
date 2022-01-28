@@ -11,7 +11,7 @@ COMMIT   Commit to reexecute
 import os
 import re
 import sys
-from subprocess import call
+from subprocess import DEVNULL, call
 
 from docopt import docopt
 
@@ -97,7 +97,7 @@ def reexecute(commit_rev: str) -> None:
                 with open(TEMP_REX_SCRIPT, "w") as f:
                     print("set -eo pipefail", file=f)
                     print("\n".join(script), file=f)
-                resultcode = call(["bash", TEMP_REX_SCRIPT])
+                resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
                 if resultcode != 0:
                     sys.exit(resultcode)
         finally:
