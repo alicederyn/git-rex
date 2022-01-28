@@ -3,6 +3,8 @@
 import os.path
 from subprocess import check_call, check_output
 
+import pytest
+
 SINGLE_SCRIPT_COMMIT_MESSAGE = """Create foo/file.txt
 
 ```bash
@@ -50,3 +52,24 @@ def test_sections_run_as_separate_bash_script(rex, temp_git_repo):
     assert file_txt == ["Line appended by rex-commit"]
     subdir_file_txt = open("foo/file.txt").read().splitlines()
     assert subdir_file_txt == ["New file created by rex-commit"]
+
+
+FIRST_COMMAND_FAILS_COMMIT_MESSAGE = """Fail early
+
+```bash
+false
+echo 'New file created by rex-commit' > file.txt
+```
+"""
+
+
+def test_stop_at_first_failure(rex, temp_git_repo):
+    check_call(
+        ["git", "commit", "--allow-empty", "-m", FIRST_COMMAND_FAILS_COMMIT_MESSAGE]
+    )
+    COMMIT = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
+    with pytest.raises(SystemExit):
+        rex(COMMIT)
+
+    # Verify second line was not run
+    assert not os.path.exists("file.txt")
