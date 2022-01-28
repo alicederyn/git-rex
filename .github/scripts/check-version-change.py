@@ -62,10 +62,10 @@ if old_name != new_name:
     if norelease:
         print("norelease PRs cannot change the project name", file=sys.stderr)
         sys.exit(1)
-elif old_version < new_version:
+elif old_version > new_version:
     print("Version is older in this PR than on destination branch", file=sys.stderr)
     sys.exit(1)
-elif old_version >= new_version:
+elif old_version == new_version:
     if not norelease:
         print(
             "PRs must bump the project version prior to merging,"
