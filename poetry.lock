@@ -66,14 +66,6 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
-name = "docopt-ng"
-version = "0.7.2"
-description = "More-magic command line arguments parser. Now with more maintenance!"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "flake8"
 version = "4.0.1"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -267,7 +259,7 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "1985cdbcc29141ca74087ea6087e02ab7a562d3aa80fe38b1af2907c53eae6dc"
+content-hash = "f20c31cf332e5d8831f45e945bda63de604ee8ec92972417055feecfcf1ac130"
 
 [metadata.files]
 atomicwrites = [
@@ -289,10 +281,6 @@ click = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
-]
-docopt-ng = [
-    {file = "docopt-ng-0.7.2.tar.gz", hash = "sha256:86ceea032f0cfa59e60776eb0cf38ac73653581022872320f47dc874678d7244"},
-    {file = "docopt_ng-0.7.2-py2.py3-none-any.whl", hash = "sha256:e98145cc02220ac5b1a8ee1c40ca9cc0cbd8e480a1b4928872bde686dc48660b"},
 ]
 flake8 = [
     {file = "flake8-4.0.1-py2.py3-none-any.whl", hash = "sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d"},

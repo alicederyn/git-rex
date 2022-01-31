@@ -1,20 +1,9 @@
-"""Git Re-EXecute
-
-Alternative to git cherry-pick that finds and runs commands in the
-commit message, instead of reapplying the diff.
-
-Usage: git-rex COMMIT
-
-COMMIT   Commit to reexecute
-"""
-
 import os
 import re
 import sys
 from logging import getLogger
+from optparse import OptionParser, Values
 from subprocess import DEVNULL, call
-
-from docopt import docopt
 
 from . import git
 from .log_config import configure_logging
@@ -115,12 +104,34 @@ def reexecute(commit_rev: str) -> None:
     git.commit_with_meta_from(commit)
 
 
+def parser() -> OptionParser:
+    usage = "Usage: %prog commit"
+    description = "Reapplies a commit by running commands from the commit message"
+
+    parser = OptionParser(usage=usage, description=description)
+    return parser
+
+
+def parse_options() -> Values:
+    (options, args) = parser().parse_args()
+    if len(args) > 1:
+        log.fatal(
+            "Too many commits specified: %s", " ".join(f"'{arg}'" for arg in args)
+        )
+        sys.exit(64)
+    options.commit = args[0] if args else None
+    return options
+
+
 def main() -> None:
     configure_logging()
-    options = docopt(__doc__)
+    options = parse_options()
+    if not options.commit:
+        parser().print_help()
+        sys.exit(64)
     try:
         os.chdir(git.top_level())
-        reexecute(commit_rev=options["COMMIT"])
+        reexecute(commit_rev=options.commit)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")
