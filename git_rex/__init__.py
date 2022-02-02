@@ -85,10 +85,9 @@ def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     return tuple(code_blocks)
 
 
-def reexecute(commit_rev: str) -> None:
+def reexecute(commit: git.Commit) -> None:
     if not git.is_clean_repo():
         raise UnstagedChanges()
-    commit = git.Commit(commit_rev)
     scripts = extract_scripts(commit.message)
     try:
         for script in scripts:
@@ -119,7 +118,7 @@ def parse_options() -> Values:
             "Too many commits specified: %s", " ".join(f"'{arg}'" for arg in args)
         )
         sys.exit(64)
-    options.commit = args[0] if args else None
+    options.commit = git.Commit(args[0]) if args else None
     return options
 
 
@@ -131,7 +130,7 @@ def main() -> None:
         sys.exit(64)
     try:
         os.chdir(git.top_level())
-        reexecute(commit_rev=options.commit)
+        reexecute(commit=options.commit)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")

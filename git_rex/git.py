@@ -35,7 +35,11 @@ def top_level() -> Path:
 
 class Commit:
     def __init__(self, rev: str):
-        self.hash = git("rev-parse", rev).decode("ascii").strip()
+        self._rev = rev
+
+    @cached_property
+    def hash(self) -> str:
+        return git("rev-parse", self._rev).decode("ascii").strip()
 
     @cached_property
     def message(self) -> str:
