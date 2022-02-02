@@ -60,21 +60,27 @@ def run_scripts(commit_message: str) -> None:
         os.remove(TEMP_REX_SCRIPT)
 
 
-def reexecute_commit(commit: git.Commit) -> None:
+def reexecute_commit(commit: git.Commit, *, no_commit: bool) -> None:
     """git rex commit"""
     run_scripts(commit.message)
     git.add_all()
-    git.commit_with_meta_from(commit)
+    if no_commit:
+        git.store_commit_message(commit.message)
+    else:
+        git.commit_with_meta_from(commit)
 
 
-def edit_commit(commit: Optional[git.Commit]) -> None:
+def edit_commit(commit: Optional[git.Commit], *, no_commit: bool) -> None:
     """git rex --edit [commit]"""
     original_message = commit.message if commit else DEFAULT_COMMIT_TEMPLATE
     raw_edited_message = spawn_editor(original_message, filename=".git/COMMIT_EDITMSG")
     commit_message = cleanup_message(raw_edited_message)
     run_scripts(commit_message)
     git.add_all()
-    git.commit(commit_message)
+    if no_commit:
+        git.store_commit_message(commit_message)
+    else:
+        git.commit(commit_message)
 
 
 def parser() -> OptionParser:
@@ -84,6 +90,12 @@ def parser() -> OptionParser:
     parser = OptionParser(usage=usage, description=description)
     parser.add_option(
         "-e", "--edit", action="store_true", help="Edit commit message before executing"
+    )
+    parser.add_option(
+        "-n",
+        "--no-commit",
+        action="store_true",
+        help="Execute commands and stage changes, but do not commit them",
     )
     return parser
 
@@ -105,16 +117,19 @@ def main() -> None:
     try:
         os.chdir(git.top_level())
 
-        if not git.is_clean_repo():
+        is_clean = (
+            git.no_unstaged_changes() if options.no_commit else git.is_clean_repo()
+        )
+        if not is_clean:
             raise UnstagedChanges()
 
         if options.edit:
-            edit_commit(options.commit)
+            edit_commit(options.commit, no_commit=options.no_commit)
         else:
             if not options.commit:
                 parser().print_help()
                 sys.exit(64)
-            reexecute_commit(options.commit)
+            reexecute_commit(options.commit, no_commit=options.no_commit)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")

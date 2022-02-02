@@ -26,6 +26,11 @@ def is_clean_repo() -> bool:
     return status == b""
 
 
+def no_unstaged_changes() -> bool:
+    status = git("status", "--porcelain")
+    return any(line[1] != " " for line in status.splitlines())
+
+
 def add_all() -> None:
     git("add", "-A")
 
@@ -34,6 +39,11 @@ def core_editor() -> str:
     p = Popen(["git", "config", "core.editor"], stdout=PIPE)
     stdout, _ = p.communicate()
     return stdout.decode("ascii").strip()
+
+
+def store_commit_message(commit_message: str) -> None:
+    with open(".git/MERGE_MSG", "w") as f:
+        f.write(commit_message)
 
 
 def commit(commit_message: str) -> None:
