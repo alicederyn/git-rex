@@ -16,6 +16,7 @@ pytest = "^6.2.5"
 isort = "^5.10.1"
 flake8 = "^4.0.1"
 mypy = "^0.931"
+pytest-timeout = "^2.1.0"
 
 [tool.isort]
 profile = "black"
