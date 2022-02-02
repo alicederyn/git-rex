@@ -67,6 +67,14 @@ git rex --edit
 In this case, a template commit message will be opened.
 
 
+### `-n`, `--no-commit`
+
+Runs a commit script and stages the changes made, but does not commit. The commit message will
+be available the next time you run `git commit`. In addition, when this option is used, your
+index may contain staged changes. The commit script is performed against the current state of
+your index.
+
+
 Forwards-compatibility
 ----------------------
 
