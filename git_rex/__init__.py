@@ -11,14 +11,17 @@ COMMIT   Commit to reexecute
 import os
 import re
 import sys
+from logging import getLogger
 from subprocess import DEVNULL, call
 
 from docopt import docopt
 
-from git_rex import git
+from . import git
+from .log_config import configure_logging
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 TEMP_REX_SCRIPT = ".git/REX_SCRIPT"
+log = getLogger(__name__)
 
 
 class NoCodeFound(Exception):
@@ -37,6 +40,15 @@ class UnexpectedCodeBlock(Exception):
 
 class UnterminatedCodeBlock(Exception):
     pass
+
+
+class UnstagedChanges(Exception):
+    pass
+
+
+class UserCodeError(Exception):
+    def __init__(self, resultcode: int):
+        self.resultcode = resultcode
 
 
 def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
@@ -85,42 +97,48 @@ def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
 
 
 def reexecute(commit_rev: str) -> None:
+    if not git.is_clean_repo():
+        raise UnstagedChanges()
+    commit = git.Commit(commit_rev)
+    scripts = extract_scripts(commit.message)
     try:
-        if not git.is_clean_repo():
-            print("error: cannot reexecute: You have unstaged changes.")
-            print("error: Please commit or stash them.")
-            sys.exit(64)
-        commit = git.Commit(commit_rev)
-        scripts = extract_scripts(commit.message)
-        try:
-            for script in scripts:
-                with open(TEMP_REX_SCRIPT, "w") as f:
-                    print("set -eo pipefail", file=f)
-                    print("\n".join(script), file=f)
-                resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
-                if resultcode != 0:
-                    sys.exit(resultcode)
-        finally:
-            os.remove(TEMP_REX_SCRIPT)
-        git.add_all()
-        git.commit_with_meta_from(commit)
-    except NoCodeFound:
-        print("fatal: No code section found in commit", file=sys.stderr)
-        sys.exit(64)
-    except UnsupportedCodeSyntax as e:
-        print(f"fatal: {e.lineno}: Code sections must specify bash syntax")
-        sys.exit(64)
-    except UnexpectedCodeBlock as e:
-        print(f"fatal: {e.lineno}: Unexpected start of new code section")
-        sys.exit(64)
-    except UnterminatedCodeBlock:
-        print("fatal: Code block not terminated in commit message", file=sys.stderr)
-        sys.exit(64)
-    except git.GitFailure as e:
-        print(f"fatal: {e.message}", file=sys.stderr)
+        for script in scripts:
+            with open(TEMP_REX_SCRIPT, "w") as f:
+                print("set -eo pipefail", file=f)
+                print("\n".join(script), file=f)
+            resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
+            if resultcode != 0:
+                raise UserCodeError(resultcode)
+    finally:
+        os.remove(TEMP_REX_SCRIPT)
+    git.add_all()
+    git.commit_with_meta_from(commit)
 
 
 def main() -> None:
+    configure_logging()
     options = docopt(__doc__)
-    os.chdir(git.top_level())
-    reexecute(commit_rev=options["COMMIT"])
+    try:
+        os.chdir(git.top_level())
+        reexecute(commit_rev=options["COMMIT"])
+    except UnstagedChanges:
+        log.error("cannot reexecute: You have unstaged changes.")
+        log.error("Please commit or stash them.")
+        sys.exit(64)
+    except NoCodeFound:
+        log.fatal("No code section found in commit")
+        sys.exit(64)
+    except UnsupportedCodeSyntax as e:
+        log.fatal("%d: Code sections must specify bash syntax", e.lineno)
+        sys.exit(64)
+    except UnexpectedCodeBlock as e:
+        log.fatal("%d: Unexpected start of new code section", e.lineno)
+        sys.exit(64)
+    except UnterminatedCodeBlock:
+        log.fatal("Code block not terminated in commit message")
+        sys.exit(64)
+    except git.GitFailure as e:
+        log.fatal("%s", e.message)
+        sys.exit(64)
+    except UserCodeError as e:
+        sys.exit(e.resultcode)
