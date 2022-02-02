@@ -39,6 +39,15 @@ class UnterminatedCodeBlock(Exception):
     pass
 
 
+class UnstagedChanges(Exception):
+    pass
+
+
+class UserCodeError(Exception):
+    def __init__(self, resultcode: int):
+        self.resultcode = resultcode
+
+
 def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     """Extracts code from between triple-tick blocks
 
@@ -85,25 +94,33 @@ def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
 
 
 def reexecute(commit_rev: str) -> None:
+    if not git.is_clean_repo():
+        raise UnstagedChanges()
+    commit = git.Commit(commit_rev)
+    scripts = extract_scripts(commit.message)
     try:
-        if not git.is_clean_repo():
-            print("error: cannot reexecute: You have unstaged changes.")
-            print("error: Please commit or stash them.")
-            sys.exit(64)
-        commit = git.Commit(commit_rev)
-        scripts = extract_scripts(commit.message)
-        try:
-            for script in scripts:
-                with open(TEMP_REX_SCRIPT, "w") as f:
-                    print("set -eo pipefail", file=f)
-                    print("\n".join(script), file=f)
-                resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
-                if resultcode != 0:
-                    sys.exit(resultcode)
-        finally:
-            os.remove(TEMP_REX_SCRIPT)
-        git.add_all()
-        git.commit_with_meta_from(commit)
+        for script in scripts:
+            with open(TEMP_REX_SCRIPT, "w") as f:
+                print("set -eo pipefail", file=f)
+                print("\n".join(script), file=f)
+            resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
+            if resultcode != 0:
+                raise UserCodeError(resultcode)
+    finally:
+        os.remove(TEMP_REX_SCRIPT)
+    git.add_all()
+    git.commit_with_meta_from(commit)
+
+
+def main() -> None:
+    options = docopt(__doc__)
+    try:
+        os.chdir(git.top_level())
+        reexecute(commit_rev=options["COMMIT"])
+    except UnstagedChanges:
+        print("error: cannot reexecute: You have unstaged changes.")
+        print("error: Please commit or stash them.")
+        sys.exit(64)
     except NoCodeFound:
         print("fatal: No code section found in commit", file=sys.stderr)
         sys.exit(64)
@@ -118,9 +135,6 @@ def reexecute(commit_rev: str) -> None:
         sys.exit(64)
     except git.GitFailure as e:
         print(f"fatal: {e.message}", file=sys.stderr)
-
-
-def main() -> None:
-    options = docopt(__doc__)
-    os.chdir(git.top_level())
-    reexecute(commit_rev=options["COMMIT"])
+        sys.exit(64)
+    except UserCodeError as e:
+        sys.exit(e.resultcode)

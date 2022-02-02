@@ -19,9 +19,11 @@ def assert_git_version(minimum_version):
 def temp_git_repo(request, tmp_path):
     assert_git_version("2.28")  # Needed for `git branch -m` to succeed
     os.chdir(tmp_path)
-    check_call(["git", "init", "--quiet"])
-    check_call(["git", "branch", "-m", "main"])
-    check_call(["git", "config", "user.email", "unit-test-runner@example.com"])
-    check_call(["git", "config", "user.name", "Unit Test Runner"])
-    yield tmp_path
-    os.chdir(request.config.invocation_dir)
+    try:
+        check_call(["git", "init", "--quiet"])
+        check_call(["git", "branch", "-m", "main"])
+        check_call(["git", "config", "user.email", "unit-test-runner@example.com"])
+        check_call(["git", "config", "user.name", "Unit Test Runner"])
+        yield tmp_path
+    finally:
+        os.chdir(request.config.invocation_dir)
