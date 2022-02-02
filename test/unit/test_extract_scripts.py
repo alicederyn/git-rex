@@ -1,6 +1,6 @@
 import pytest
 
-from git_rex import (
+from git_rex.messages import (
     NoCodeFound,
     UnexpectedCodeBlock,
     UnsupportedCodeSyntax,
