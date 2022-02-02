@@ -11,14 +11,17 @@ COMMIT   Commit to reexecute
 import os
 import re
 import sys
+from logging import getLogger
 from subprocess import DEVNULL, call
 
 from docopt import docopt
 
-from git_rex import git
+from . import git
+from .log_config import configure_logging
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 TEMP_REX_SCRIPT = ".git/REX_SCRIPT"
+log = getLogger(__name__)
 
 
 class NoCodeFound(Exception):
@@ -113,28 +116,29 @@ def reexecute(commit_rev: str) -> None:
 
 
 def main() -> None:
+    configure_logging()
     options = docopt(__doc__)
     try:
         os.chdir(git.top_level())
         reexecute(commit_rev=options["COMMIT"])
     except UnstagedChanges:
-        print("error: cannot reexecute: You have unstaged changes.")
-        print("error: Please commit or stash them.")
+        log.error("cannot reexecute: You have unstaged changes.")
+        log.error("Please commit or stash them.")
         sys.exit(64)
     except NoCodeFound:
-        print("fatal: No code section found in commit", file=sys.stderr)
+        log.fatal("No code section found in commit")
         sys.exit(64)
     except UnsupportedCodeSyntax as e:
-        print(f"fatal: {e.lineno}: Code sections must specify bash syntax")
+        log.fatal("%d: Code sections must specify bash syntax", e.lineno)
         sys.exit(64)
     except UnexpectedCodeBlock as e:
-        print(f"fatal: {e.lineno}: Unexpected start of new code section")
+        log.fatal("%d: Unexpected start of new code section", e.lineno)
         sys.exit(64)
     except UnterminatedCodeBlock:
-        print("fatal: Code block not terminated in commit message", file=sys.stderr)
+        log.fatal("Code block not terminated in commit message")
         sys.exit(64)
     except git.GitFailure as e:
-        print(f"fatal: {e.message}", file=sys.stderr)
+        log.fatal("%s", e.message)
         sys.exit(64)
     except UserCodeError as e:
         sys.exit(e.resultcode)
