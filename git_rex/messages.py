@@ -22,16 +22,27 @@ class UnterminatedCodeBlock(Exception):
     pass
 
 
+class TextLine:
+    def __init__(self, text: str):
+        self.text = text
+
+
+class CodeBlockStart:
+    def __init__(self, text: str):
+        self.text = text
+
+
 class CodeLine:
     def __init__(self, text: str):
         self.text = text
 
 
 class CodeBlockEnd:
-    pass
+    def __init__(self, text: str):
+        self.text = text
 
 
-MessageLine = Union[CodeLine, CodeBlockEnd]
+MessageLine = Union[TextLine, CodeBlockStart, CodeLine, CodeBlockEnd]
 
 
 def parse_message(message: str) -> Iterable[MessageLine]:
@@ -42,13 +53,16 @@ def parse_message(message: str) -> Iterable[MessageLine]:
             if m := CODE_BLOCK.match(line):
                 if m.group(1) != "bash":
                     raise UnsupportedCodeSyntax(lineno)
+                yield CodeBlockStart(line)
                 in_code_block = True
+            else:
+                yield TextLine(line)
         else:
             if m := CODE_BLOCK.match(line):
                 if m.group(1):
                     raise UnexpectedCodeBlock(lineno)
                 in_code_block = False
-                yield CodeBlockEnd()
+                yield CodeBlockEnd(line)
             else:
                 yield CodeLine(line)
     if in_code_block:
@@ -85,3 +99,21 @@ def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     if not code_blocks:
         raise NoCodeFound()
     return tuple(code_blocks)
+
+
+def cleanup_message(message: str) -> str:
+    """Remove comments outside of code blocks."""
+    lines = []
+    code_line_found = False
+    for line in parse_message(message):
+        is_comment = line.text.startswith("#")
+        if isinstance(line, CodeLine):
+            if line.text.strip() and not is_comment:
+                code_line_found = True
+        else:
+            if is_comment:
+                continue
+        lines.append(f"{line.text}\n")
+    if not code_line_found:
+        raise NoCodeFound()
+    return "".join(lines)

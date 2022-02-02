@@ -5,7 +5,11 @@ Alternative to git cherry-pick that finds and runs commands in the commit messag
 
 [![Validation status page](https://github.com/alicederyn/git-rex/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/alicederyn/git-rex/actions/workflows/validation.yml?query=branch%3Amain)
 
-For instance, suppose `git rebase -i` gives the following script:
+
+Reexecuting
+-----------
+
+Suppose `git rebase -i` gives the following script:
 
 ```
 pick 151779 Add new feature
@@ -19,8 +23,11 @@ edit 151779 Add new feature
 x git rex 2332c1 # Automatic code reformatting
 ```
 
-Note that rex only supports scripts in a [Markdown fenced code block] with
-[bash syntax highlighting]:
+
+Commit messages
+---------------
+
+Rex only supports scripts in a [Markdown fenced code block] with [bash syntax highlighting]:
 
 ````
 Automatic code reformatting
@@ -40,6 +47,24 @@ variables, or directory changes) persist until the end of a code black. Each scr
 
 [Markdown fenced code block]: https://www.markdownguide.org/extended-syntax/#fenced-code-blocks
 [bash syntax highlighting]: https://www.markdownguide.org/extended-syntax/#syntax-highlighting
+
+
+Command-line options
+--------------------
+
+### `-e`, `--edit`
+
+Before executing a commit script, opens the commit message in an editor for amendment. Unlike
+in regular `git commit`, comments within scripts will not be removed from the edit message.
+The author and timestamp of the original commit will be discarded.
+
+If this flag is provided, the commit can optionally be missed off the invocation completely:
+
+```bash
+git rex --edit
+```
+
+In this case, a template commit message will be opened.
 
 
 Forwards-compatibility
