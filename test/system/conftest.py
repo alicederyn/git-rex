@@ -5,6 +5,8 @@ import pytest
 
 import git_rex
 
+from .mock_editor import MockEditor
+
 
 @pytest.fixture
 def rex():
@@ -19,3 +21,9 @@ def rex():
             os.chdir(cwd)
 
     return invoke_rex
+
+
+@pytest.fixture
+def mock_editor(temp_git_repo):
+    with MockEditor() as mock_editor:
+        yield mock_editor

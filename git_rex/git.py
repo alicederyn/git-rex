@@ -12,7 +12,12 @@ def git(*args: str) -> bytes:
     p = Popen(["git", *args], stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
-        raise GitFailure(stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: "))
+        try:
+            raise GitFailure(
+                stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: ")
+            )
+        except IndexError:
+            raise GitFailure("") from None
     return stdout
 
 
@@ -23,6 +28,16 @@ def is_clean_repo() -> bool:
 
 def add_all() -> None:
     git("add", "-A")
+
+
+def core_editor() -> str:
+    p = Popen(["git", "config", "core.editor"], stdout=PIPE)
+    stdout, _ = p.communicate()
+    return stdout.decode("ascii").strip()
+
+
+def commit(commit_message: str) -> None:
+    git("commit", "-m", commit_message)
 
 
 def commit_with_meta_from(commit: "Commit") -> None:

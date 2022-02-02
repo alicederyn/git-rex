@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "git-rex"
-version = "0.3.2"
+version = "0.4.0"
 description = ""
 authors = ["Alice Purcell <Alice.Purcell.39@gmail.com>"]
 
@@ -16,6 +16,7 @@ pytest = "^6.2.5"
 isort = "^5.10.1"
 flake8 = "^4.0.1"
 mypy = "^0.931"
+pytest-timeout = "^2.1.0"
 
 [tool.isort]
 profile = "black"
