@@ -35,12 +35,6 @@ def top_level() -> Path:
 
 class Commit:
     def __init__(self, rev: str):
-        p = Popen(["git", "rev-parse", rev], stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        if p.returncode != 0:
-            raise GitFailure(
-                stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: ")
-            )
         self.hash = git("rev-parse", rev).decode("ascii").strip()
 
     @cached_property
