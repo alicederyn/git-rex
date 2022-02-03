@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
         poetry-version: [1.1.12]
@@ -28,9 +28,9 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install
-    - name: Check formatting with black
+    - name: Test with pytest
       run: |
-        poetry run black --check .
+        poetry run pytest .
 
   lint:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
         poetry install
     - name: Check typing with mypy
       run: |
-        poetry run mypy .
+        poetry run mypy --python-version 3.8 .
     - name: Check style with flake8
       run: |
         poetry run flake8

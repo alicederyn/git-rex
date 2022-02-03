@@ -5,10 +5,14 @@ import pytest
 from packaging import version
 
 
+def removeprefix(str, prefix):
+    return str[len(prefix) :] if str.startswith(prefix) else str
+
+
 def assert_git_version(minimum_version):
     git_version = version.parse(
-        check_output(["git", "--version"], encoding="ascii").removeprefix(
-            "git version "
+        removeprefix(
+            check_output(["git", "--version"], encoding="ascii"), "git version "
         )
     )
     if git_version < version.parse(minimum_version):

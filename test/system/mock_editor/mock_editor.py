@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Dict
 
 ARGV_FILE = ".git/MOCK_EDITOR_ARGV"
 EXIT_CODE_FILE = ".git/MOCK_EDITOR_EXIT_CODE"
@@ -20,7 +21,7 @@ class MockEditor:
             with open(EXIT_CODE_FILE, "w") as f:
                 f.write("-1\n")
 
-    def env(self) -> dict[str, str]:
+    def env(self) -> Dict[str, str]:
         return {"EDITOR": f"{sys.executable} {SCRIPT_DIR}"}
 
     def filename(self) -> str:
