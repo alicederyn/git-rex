@@ -1,5 +1,5 @@
 import re
-from typing import Iterable, Union
+from typing import Iterable, List, Tuple, Union
 
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 
@@ -69,7 +69,7 @@ def parse_message(message: str) -> Iterable[MessageLine]:
         raise UnterminatedCodeBlock(lineno, line)
 
 
-def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
+def extract_scripts(message: str) -> Tuple[Tuple[str, ...], ...]:
     """Extracts code from between triple-tick blocks
 
     >>> commit_message = '''Sample commit
@@ -89,7 +89,7 @@ def extract_scripts(message: str) -> tuple[tuple[str, ...], ...]:
     (('run_my_code thing', 'and_my_other thing'), ('run_a_third thing',))
     """
     code_blocks = []
-    code_lines: list[str] = []
+    code_lines: List[str] = []
     for line in parse_message(message):
         if isinstance(line, CodeLine):
             code_lines.append(line.text.strip())
