@@ -1,7 +1,7 @@
 import os
 import sys
+from argparse import ArgumentParser
 from logging import getLogger
-from optparse import OptionParser, Values
 from subprocess import DEVNULL, call
 from typing import Optional
 
@@ -83,15 +83,18 @@ def edit_commit(commit: Optional[git.Commit], *, no_commit: bool) -> None:
         git.commit(commit_message)
 
 
-def parser() -> OptionParser:
-    usage = "Usage: %prog [options] [commit]"
-    description = "Reapplies a commit by running commands from the commit message"
-
-    parser = OptionParser(usage=usage, description=description)
-    parser.add_option(
+def parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description="Reapplies a commit by running commands from the commit message",
+        allow_abbrev=False,
+    )
+    parser.add_argument(
+        "commit", nargs="?", type=git.Commit, help="commit to reexecute"
+    )
+    parser.add_argument(
         "-e", "--edit", action="store_true", help="Edit commit message before executing"
     )
-    parser.add_option(
+    parser.add_argument(
         "-n",
         "--no-commit",
         action="store_true",
@@ -100,42 +103,29 @@ def parser() -> OptionParser:
     return parser
 
 
-def parse_options() -> Values:
-    (options, args) = parser().parse_args()
-    if len(args) > 1:
-        log.fatal(
-            "Too many commits specified: %s", " ".join(f"'{arg}'" for arg in args)
-        )
-        sys.exit(64)
-    options.commit = git.Commit(args[0]) if args else None
-    return options
-
-
 def main() -> None:
     configure_logging()
-    options = parse_options()
+    args = parser().parse_args()
     try:
         os.chdir(git.top_level())
 
-        is_clean = (
-            git.no_unstaged_changes() if options.no_commit else git.is_clean_repo()
-        )
+        is_clean = git.no_unstaged_changes() if args.no_commit else git.is_clean_repo()
         if not is_clean:
             raise UnstagedChanges()
 
-        if options.edit:
-            edit_commit(options.commit, no_commit=options.no_commit)
+        if args.edit:
+            edit_commit(args.commit, no_commit=args.no_commit)
         else:
-            if not options.commit:
+            if not args.commit:
                 parser().print_help()
                 sys.exit(64)
-            reexecute_commit(options.commit, no_commit=options.no_commit)
+            reexecute_commit(args.commit, no_commit=args.no_commit)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")
         sys.exit(64)
     except NoCodeFound:
-        if options.edit:
+        if args.edit:
             log.fatal("Aborting commit as no code found to execute")
         else:
             log.fatal("No code section found in commit")
