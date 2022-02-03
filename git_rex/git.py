@@ -8,13 +8,18 @@ class GitFailure(Exception):
         self.message = message
 
 
+def removeprefix(s: str, prefix: str):
+    """Same as s.removeprefix(prefix), added in Python 3.9."""
+    return s[len(prefix) :] if s.startswith(prefix) else s
+
+
 def git(*args: str) -> bytes:
     p = Popen(["git", *args], stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
         try:
             raise GitFailure(
-                stderr.decode("utf-8").splitlines()[0].removeprefix("fatal: ")
+                removeprefix(stderr.decode("utf-8").splitlines()[0], "fatal: ")
             )
         except IndexError:
             raise GitFailure("") from None
@@ -55,7 +60,7 @@ def commit_with_meta_from(commit: "Commit") -> None:
 
 
 def top_level() -> Path:
-    return Path(git("rev-parse", "--show-toplevel").decode("utf-8").removesuffix("\n"))
+    return Path(git("rev-parse", "--show-toplevel").decode("utf-8").strip())
 
 
 class Commit:
