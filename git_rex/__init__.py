@@ -2,10 +2,10 @@ import os
 import sys
 from argparse import ArgumentParser
 from logging import getLogger
-from subprocess import DEVNULL, call
 from typing import Optional
 
 from . import git
+from .bash import UserCodeError
 from .editor import EditorError, EditorUnset, spawn_editor
 from .log_config import configure_logging
 from .messages import (
@@ -17,7 +17,6 @@ from .messages import (
     extract_scripts,
 )
 
-TEMP_REX_SCRIPT = ".git/REX_SCRIPT"
 log = getLogger(__name__)
 
 DEFAULT_COMMIT_TEMPLATE = """Automated commit created with git-rex
@@ -41,23 +40,9 @@ class UnstagedChanges(Exception):
     pass
 
 
-class UserCodeError(Exception):
-    def __init__(self, resultcode: int):
-        self.resultcode = resultcode
-
-
 def run_scripts(commit_message: str) -> None:
-    scripts = extract_scripts(commit_message)
-    try:
-        for script in scripts:
-            with open(TEMP_REX_SCRIPT, "w") as f:
-                print("set -eo pipefail", file=f)
-                print("\n".join(script), file=f)
-            resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
-            if resultcode != 0:
-                raise UserCodeError(resultcode)
-    finally:
-        os.remove(TEMP_REX_SCRIPT)
+    for script in extract_scripts(commit_message):
+        script.execute()
 
 
 def reexecute_commit(commit: git.Commit, *, no_commit: bool) -> None:
