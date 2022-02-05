@@ -1,6 +1,8 @@
 import re
 from typing import Iterable, List, Tuple, Union
 
+from .bash import BashScript
+
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 
 
@@ -69,7 +71,7 @@ def parse_message(message: str) -> Iterable[MessageLine]:
         raise UnterminatedCodeBlock(lineno, line)
 
 
-def extract_scripts(message: str) -> Tuple[Tuple[str, ...], ...]:
+def extract_scripts(message: str) -> Tuple[BashScript, ...]:
     """Extracts code from between triple-tick blocks
 
     >>> commit_message = '''Sample commit
@@ -77,16 +79,16 @@ def extract_scripts(message: str) -> Tuple[Tuple[str, ...], ...]:
     ... This commit did some stuff
     ...
     ... ```bash
-    ... run_my_code thing
-    ... and_my_other thing
+    ... do_a thing
+    ... and_a thing
     ... ```
     ...
     ... ```bash
-    ... run_a_third thing
+    ... do stuff
     ... ```
     ... '''
     >>> extract_scripts(commit_message)
-    (('run_my_code thing', 'and_my_other thing'), ('run_a_third thing',))
+    (BashScript(('do_a thing', 'and_a thing')), BashScript(('do stuff',)))
     """
     code_blocks = []
     code_lines: List[str] = []
@@ -94,7 +96,7 @@ def extract_scripts(message: str) -> Tuple[Tuple[str, ...], ...]:
         if isinstance(line, CodeLine):
             code_lines.append(line.text.strip())
         elif isinstance(line, CodeBlockEnd):
-            code_blocks.append(tuple(code_lines))
+            code_blocks.append(BashScript(tuple(code_lines)))
             code_lines.clear()
     if not code_blocks:
         raise NoCodeFound()
