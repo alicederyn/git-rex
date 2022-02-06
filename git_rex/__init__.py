@@ -2,7 +2,6 @@ import os
 import sys
 from argparse import ArgumentParser
 from logging import getLogger
-from typing import Optional
 
 from . import git
 from .bash import UserCodeError
@@ -50,31 +49,6 @@ def run_scripts(commit_message: str) -> None:
         script.execute()
 
 
-def reexecute_commit(commit: git.Commit, *, no_commit: bool) -> None:
-    """git rex commit"""
-    run_scripts(commit.message)
-    git.add_all()
-    if no_commit:
-        git.store_commit_message(commit.message)
-    else:
-        git.commit_with_meta_from(commit)
-
-
-def edit_commit(commit: Optional[git.Commit], *, no_commit: bool) -> None:
-    """git rex --edit [commit]"""
-    original_message = commit.message if commit else DEFAULT_COMMIT_TEMPLATE
-    raw_edited_message = spawn_editor(original_message, filename=".git/COMMIT_EDITMSG")
-    commit_message = cleanup_message(raw_edited_message)
-    run_scripts(commit_message)
-    git.add_all()
-    if no_commit:
-        git.store_commit_message(commit_message)
-    elif commit and commit.message == commit_message:
-        git.commit_with_meta_from(commit)
-    else:
-        git.commit(commit_message)
-
-
 def parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="Reapplies a commit by running commands from the commit message",
@@ -104,11 +78,32 @@ def rex() -> None:
         raise UnstagedChanges()
 
     if args.edit:
-        edit_commit(args.commit, no_commit=args.no_commit)
+        """git rex --edit [commit]"""
+        original_message = (
+            args.commit.message if args.commit else DEFAULT_COMMIT_TEMPLATE
+        )
+        raw_edited_message = spawn_editor(
+            original_message, filename=".git/COMMIT_EDITMSG"
+        )
+        commit_message = cleanup_message(raw_edited_message)
+        run_scripts(commit_message)
+        git.add_all()
+        if args.no_commit:
+            git.store_commit_message(commit_message)
+        elif args.commit and args.commit.message == commit_message:
+            git.commit_with_meta_from(args.commit)
+        else:
+            git.commit(commit_message)
     else:
+        """git rex commit"""
         if not args.commit:
             raise InvocationError()
-        reexecute_commit(args.commit, no_commit=args.no_commit)
+        run_scripts(args.commit.message)
+        git.add_all()
+        if args.no_commit:
+            git.store_commit_message(args.commit.message)
+        else:
+            git.commit_with_meta_from(args.commit)
 
 
 def main() -> None:
