@@ -95,22 +95,26 @@ def parser() -> ArgumentParser:
     return parser
 
 
+def rex() -> None:
+    args = parser().parse_args()
+    os.chdir(git.top_level())
+
+    is_clean = git.no_unstaged_changes() if args.no_commit else git.is_clean_repo()
+    if not is_clean:
+        raise UnstagedChanges()
+
+    if args.edit:
+        edit_commit(args.commit, no_commit=args.no_commit)
+    else:
+        if not args.commit:
+            raise InvocationError()
+        reexecute_commit(args.commit, no_commit=args.no_commit)
+
+
 def main() -> None:
     configure_logging()
-    args = parser().parse_args()
     try:
-        os.chdir(git.top_level())
-
-        is_clean = git.no_unstaged_changes() if args.no_commit else git.is_clean_repo()
-        if not is_clean:
-            raise UnstagedChanges()
-
-        if args.edit:
-            edit_commit(args.commit, no_commit=args.no_commit)
-        else:
-            if not args.commit:
-                raise InvocationError()
-            reexecute_commit(args.commit, no_commit=args.no_commit)
+        rex()
     except InvocationError:
         parser().print_help()
         sys.exit(64)
