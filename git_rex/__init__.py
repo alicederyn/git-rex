@@ -9,7 +9,8 @@ from .bash import UserCodeError
 from .editor import EditorError, EditorUnset, spawn_editor
 from .log_config import configure_logging
 from .messages import (
-    NoCodeFound,
+    NoExecutableCodeFound,
+    NoScriptBlockFound,
     UnexpectedCodeBlock,
     UnsupportedCodeSyntax,
     UnterminatedCodeBlock,
@@ -117,11 +118,11 @@ def main() -> None:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")
         sys.exit(64)
-    except NoCodeFound:
-        if args.edit:
-            log.fatal("Aborting commit as no code found to execute")
-        else:
-            log.fatal("No code section found in commit")
+    except NoScriptBlockFound:
+        log.fatal("No code section found in commit")
+        sys.exit(64)
+    except NoExecutableCodeFound:
+        log.fatal("Aborting commit as no code found to execute")
         sys.exit(64)
     except UnsupportedCodeSyntax as e:
         log.fatal("%d: Code sections must specify bash syntax", e.lineno)

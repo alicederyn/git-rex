@@ -1,7 +1,7 @@
 import pytest
 
 from git_rex.messages import (
-    NoCodeFound,
+    NoScriptBlockFound,
     UnexpectedCodeBlock,
     UnsupportedCodeSyntax,
     UnterminatedCodeBlock,
@@ -10,7 +10,7 @@ from git_rex.messages import (
 
 
 def test_no_code_block():
-    with pytest.raises(NoCodeFound):
+    with pytest.raises(NoScriptBlockFound):
         extract_scripts("Some commit\n\nNo code")
 
 
