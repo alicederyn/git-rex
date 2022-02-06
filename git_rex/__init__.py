@@ -93,23 +93,19 @@ def rex() -> None:
             original_message, filename=".git/COMMIT_EDITMSG"
         )
         commit_message = cleanup_message(raw_edited_message)
-        run_scripts(commit_message)
-        git.add_all()
-        if args.no_commit:
-            git.store_commit_message(commit_message)
-        elif args.commit and args.commit.message == commit_message:
-            git.commit_with_meta_from(args.commit)
-        else:
-            git.commit(commit_message)
     else:
         """git rex commit"""
         commit_message = original_message
-        run_scripts(commit_message)
-        git.add_all()
-        if args.no_commit:
-            git.store_commit_message(commit_message)
-        else:
-            git.commit_with_meta_from(args.commit)
+
+    run_scripts(commit_message)
+    git.add_all()
+
+    if args.no_commit:
+        git.store_commit_message(commit_message)
+    elif args.commit and args.commit.message == commit_message:
+        git.commit_with_meta_from(args.commit)
+    else:
+        git.commit(commit_message)
 
 
 def main() -> None:
