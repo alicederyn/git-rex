@@ -74,6 +74,11 @@ be available the next time you run `git commit`. In addition, when this option i
 index may contain staged changes. The commit script is performed against the current state of
 your index.
 
+### `-v`, `--verbose`
+
+Outputs each command before executing it. Uses `set -x`, so commands are output to standard
+error, prefixed with a `+`.
+
 
 Forwards-compatibility
 ----------------------
