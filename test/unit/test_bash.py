@@ -6,15 +6,6 @@ import pytest
 
 from git_rex.bash import BashScript, UserCodeError
 
-SINGLE_SCRIPT_COMMIT_MESSAGE = """Create foo/file.txt
-
-```bash
-mkdir foo
-cd foo
-echo 'New file created by rex-commit' > file.txt
-```
-"""
-
 
 def test_change_directory_in_script(temp_working_dir):
     script = BashScript(
