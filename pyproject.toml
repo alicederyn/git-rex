@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "git-rex"
-version = "0.5.2"
+version = "0.5.3"
 description = ""
 authors = ["Alice Purcell <Alice.Purcell.39@gmail.com>"]
 

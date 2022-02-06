@@ -64,6 +64,8 @@ def edit_commit(commit: Optional[git.Commit], *, no_commit: bool) -> None:
     git.add_all()
     if no_commit:
         git.store_commit_message(commit_message)
+    elif commit and commit.message == commit_message:
+        git.commit_with_meta_from(commit)
     else:
         git.commit(commit_message)
 
