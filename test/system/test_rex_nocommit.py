@@ -29,7 +29,7 @@ def test_rex_commit(rex, temp_git_repo):
         f.write("some text")
     check_call(["git", "add", "file2.txt"])
 
-    rex("--no-commit", COMMIT)
+    assert rex("--no-commit", COMMIT).wait() == 0
 
     # Verify the file contains the right contents
     file_txt = open("file.txt").read().splitlines()

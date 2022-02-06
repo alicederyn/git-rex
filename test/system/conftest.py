@@ -1,29 +1,33 @@
-import os
 import sys
+from subprocess import Popen
+from typing import Dict, Iterable, Optional
 
 import pytest
-
-import git_rex
 
 from .mock_editor import MockEditor
 
 
+class Rex:
+    env: Optional[Dict[str, str]]
+
+    def __init__(self):
+        self.env = None
+
+    def __call__(self, *args, **kwargs) -> Popen:
+        return Popen(
+            [sys.executable, "-c", "import git_rex ; git_rex.main()", *args],
+            env=self.env,
+            **kwargs
+        )
+
+
 @pytest.fixture
-def rex():
-    def invoke_rex(*args: str):
-        argv_copy = list(sys.argv)
-        cwd = os.getcwd()
-        try:
-            sys.argv[:] = ["git-rex", *args]
-            git_rex.main()
-        finally:
-            sys.argv[:] = argv_copy
-            os.chdir(cwd)
-
-    return invoke_rex
+def rex() -> Rex:
+    return Rex()
 
 
 @pytest.fixture
-def mock_editor(temp_git_repo):
+def mock_editor(temp_git_repo, rex: Rex) -> Iterable[MockEditor]:
     with MockEditor() as mock_editor:
+        rex.env = mock_editor.env()
         yield mock_editor

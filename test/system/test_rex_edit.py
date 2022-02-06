@@ -1,7 +1,6 @@
 """Verify invoking rex with `git rex --edit`."""
 
-import sys
-from subprocess import Popen, check_output
+from subprocess import check_output
 
 import pytest
 
@@ -22,11 +21,8 @@ POST_COMMIT_COMMENT = """
 
 
 @pytest.mark.timeout(1)
-def test_edit_flag_opens_editor(temp_git_repo, mock_editor: MockEditor):
-    rex = Popen(
-        [sys.executable, "-c", "import git_rex ; git_rex.main()", "--edit"],
-        env=mock_editor.env(),
-    )
+def test_edit_flag_opens_editor(rex, mock_editor: MockEditor):
+    p = rex("--edit")
 
     commit_file = mock_editor.filename()
     with open(commit_file) as f:
@@ -38,7 +34,7 @@ def test_edit_flag_opens_editor(temp_git_repo, mock_editor: MockEditor):
         f.write(POST_COMMIT_COMMENT)
 
     mock_editor.exit_editor()
-    assert rex.wait() == 0
+    assert p.wait() == 0
 
     # Ensure file.txt was created correctly
     with open("file.txt") as f:

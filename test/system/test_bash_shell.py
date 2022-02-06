@@ -37,7 +37,7 @@ def test_commands_run_in_bash(rex, temp_git_repo):
     check_call(["git", "commit", "--allow-empty", "-m", COMMIT_MESSAGE])
     COMMIT = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
 
-    rex(COMMIT)
+    assert rex(COMMIT).wait() == 0
 
     file3_txt = open("file3.txt").read().splitlines()
     assert file3_txt == ["1a2", "> And another MARKED line"]

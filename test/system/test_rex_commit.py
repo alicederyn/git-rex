@@ -37,15 +37,20 @@ def test_rex_commit(rex, temp_git_repo):
     check_call(["git", "commit", "-m", "Append a line"])
 
     # A simple cherry-pick would fail at this point
-    cherrypick = Popen(["git", "cherry-pick", "-n", COMMIT], stdout=PIPE, stderr=STDOUT)
+    cherrypick = Popen(
+        ["git", "cherry-pick", "-n", COMMIT],
+        stdout=PIPE,
+        stderr=STDOUT,
+        encoding="utf-8",
+    )
     stdout, _ = cherrypick.communicate()
     assert cherrypick.returncode != 0
-    assert "Merge conflict in file.txt" in stdout.decode("utf-8")
+    assert "Merge conflict in file.txt" in stdout
 
     check_call(["git", "reset", "--hard", "HEAD"])
 
     # git-rex should succeed
-    rex(COMMIT)
+    assert rex(COMMIT).wait() == 0
 
     # Verify the file contains the right contents
     file_txt = open("file.txt").read().splitlines()
