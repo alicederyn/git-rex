@@ -30,8 +30,9 @@ class TextLine:
 
 
 class CodeBlockStart:
-    def __init__(self, text: str):
+    def __init__(self, text: str, lineno: int):
         self.text = text
+        self.lineno = lineno
 
 
 class CodeLine:
@@ -55,7 +56,7 @@ def parse_message(message: str) -> Iterable[MessageLine]:
             if m := CODE_BLOCK.match(line):
                 if m.group(1) != "bash":
                     raise UnsupportedCodeSyntax(lineno)
-                yield CodeBlockStart(line)
+                yield CodeBlockStart(line, lineno)
                 in_code_block = True
             else:
                 yield TextLine(line)
@@ -87,16 +88,24 @@ def extract_scripts(message: str) -> Tuple[BashScript, ...]:
     ... do stuff
     ... ```
     ... '''
-    >>> extract_scripts(commit_message)
-    (BashScript(('do_a thing', 'and_a thing')), BashScript(('do stuff',)))
+    >>> scripts = extract_scripts(commit_message)
+    >>> print(scripts[0])
+    6: do_a thing
+    7: and_a thing
+    >>> print(scripts[1])
+    11: do stuff
     """
     code_blocks = []
     code_lines: List[str] = []
+    first_lineno: int = 0
     for line in parse_message(message):
-        if isinstance(line, CodeLine):
+        if isinstance(line, CodeBlockStart):
+            first_lineno = line.lineno + 1
+        elif isinstance(line, CodeLine):
             code_lines.append(line.text.strip())
         elif isinstance(line, CodeBlockEnd):
-            code_blocks.append(BashScript(tuple(code_lines)))
+            assert first_lineno != 0
+            code_blocks.append(BashScript(first_lineno, tuple(code_lines)))
             code_lines.clear()
     if not code_blocks:
         raise NoCodeFound()
