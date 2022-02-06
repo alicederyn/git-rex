@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from logging import getLogger
+from typing import Optional
 
 from . import git
 from .bash import UserCodeError
@@ -61,6 +62,17 @@ def run_scripts(commit_message: str) -> None:
         script.execute()
 
 
+def commit(
+    commit_message: str, original_commit: Optional[git.Commit], *, no_commit: bool
+) -> None:
+    if no_commit:
+        git.store_commit_message(commit_message)
+    elif original_commit and original_commit.message == commit_message:
+        git.commit_with_meta_from(original_commit)
+    else:
+        git.commit(commit_message)
+
+
 def parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="Reapplies a commit by running commands from the commit message",
@@ -93,13 +105,7 @@ def rex() -> None:
 
     run_scripts(commit_message)
     git.add_all()
-
-    if args.no_commit:
-        git.store_commit_message(commit_message)
-    elif args.commit and args.commit.message == commit_message:
-        git.commit_with_meta_from(args.commit)
-    else:
-        git.commit(commit_message)
+    commit(commit_message, args.commit, no_commit=args.no_commit)
 
 
 def main() -> None:
