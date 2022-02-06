@@ -13,12 +13,11 @@ class Rex:
     def __init__(self):
         self.env = None
 
-    def __call__(self, *args, stdout=None, stderr=None) -> Popen:
+    def __call__(self, *args, **kwargs) -> Popen:
         return Popen(
             [sys.executable, "-c", "import git_rex ; git_rex.main()", *args],
             env=self.env,
-            stdout=stdout,
-            stderr=stderr,
+            **kwargs
         )
 
 
