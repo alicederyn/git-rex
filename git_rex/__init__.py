@@ -77,11 +77,18 @@ def rex() -> None:
     if not is_clean:
         raise UnstagedChanges()
 
+    original_message = (
+        args.commit.message
+        if args.commit
+        else DEFAULT_COMMIT_TEMPLATE
+        if args.edit
+        else None
+    )
+    if original_message is None:
+        raise InvocationError()
+
     if args.edit:
         """git rex --edit [commit]"""
-        original_message = (
-            args.commit.message if args.commit else DEFAULT_COMMIT_TEMPLATE
-        )
         raw_edited_message = spawn_editor(
             original_message, filename=".git/COMMIT_EDITMSG"
         )
@@ -96,12 +103,11 @@ def rex() -> None:
             git.commit(commit_message)
     else:
         """git rex commit"""
-        if not args.commit:
-            raise InvocationError()
-        run_scripts(args.commit.message)
+        commit_message = original_message
+        run_scripts(commit_message)
         git.add_all()
         if args.no_commit:
-            git.store_commit_message(args.commit.message)
+            git.store_commit_message(commit_message)
         else:
             git.commit_with_meta_from(args.commit)
 
