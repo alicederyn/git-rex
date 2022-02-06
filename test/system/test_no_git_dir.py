@@ -1,18 +1,13 @@
 import os
-import sys
-from subprocess import PIPE, Popen
+from subprocess import PIPE
 
 
 def test_error_message_when_no_git_dir(request, tmp_path, rex):
     os.chdir(tmp_path)
     try:
-        rex = Popen(
-            [sys.executable, "-c", "import git_rex ; git_rex.main()", "HEAD"],
-            stdout=PIPE,
-            stderr=PIPE,
-        )
-        stdout_bytes, stderr_bytes = rex.communicate()
-        assert rex.returncode != 0
+        p = rex("HEAD", stdout=PIPE, stderr=PIPE)
+        stdout_bytes, stderr_bytes = p.communicate()
+        assert p.returncode != 0
         stdout = stdout_bytes.decode("utf-8")
         stderr = stderr_bytes.decode("utf-8")
         assert stdout == ""

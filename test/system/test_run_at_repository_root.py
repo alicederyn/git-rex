@@ -33,7 +33,7 @@ def test_run_at_repository_root(rex, temp_git_repo):
     os.chdir("subdir")
 
     # Run git-rex
-    rex(COMMIT)
+    assert rex(COMMIT).wait() == 0
 
     # Verify the correct file was modified
     os.chdir("..")

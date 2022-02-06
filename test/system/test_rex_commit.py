@@ -45,7 +45,7 @@ def test_rex_commit(rex, temp_git_repo):
     check_call(["git", "reset", "--hard", "HEAD"])
 
     # git-rex should succeed
-    rex(COMMIT)
+    assert rex(COMMIT).wait() == 0
 
     # Verify the file contains the right contents
     file_txt = open("file.txt").read().splitlines()

@@ -19,7 +19,7 @@ echo 'Line appended by rex-commit' >> file.txt
 def test_sections_run_as_separate_bash_script(rex, temp_git_repo):
     check_call(["git", "commit", "--allow-empty", "-m", TWO_SCRIPT_COMMIT_MESSAGE])
     COMMIT = check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()
-    rex(COMMIT)
+    assert rex(COMMIT).wait() == 0
 
     # Verify the files contain the right contents
     file_txt = open("file.txt").read().splitlines()
