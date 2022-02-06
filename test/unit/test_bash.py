@@ -36,7 +36,7 @@ def test_fail_if_any_pipe_component_fails(temp_working_dir):
         script.execute()
 
 
-def test_no_interactive_prompts(temp_working_dir, capfd: pytest.CaptureFixture[str]):
+def test_no_interactive_prompts(temp_working_dir):
     pyscript = """
         from git_rex.bash import BashScript
         script = BashScript(("cat > file.txt",))
