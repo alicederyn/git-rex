@@ -44,6 +44,18 @@ class UnstagedChanges(Exception):
     pass
 
 
+def get_message_to_execute(commit: git.Commit, *, edit: bool) -> str:
+    message = commit.message if commit else DEFAULT_COMMIT_TEMPLATE if edit else None
+    if message is None:
+        raise InvocationError()
+
+    if edit:
+        raw_edited_message = spawn_editor(message, filename=".git/COMMIT_EDITMSG")
+        return cleanup_message(raw_edited_message)
+    else:
+        return message
+
+
 def run_scripts(commit_message: str) -> None:
     for script in extract_scripts(commit_message):
         script.execute()
@@ -77,25 +89,7 @@ def rex() -> None:
     if not is_clean:
         raise UnstagedChanges()
 
-    original_message = (
-        args.commit.message
-        if args.commit
-        else DEFAULT_COMMIT_TEMPLATE
-        if args.edit
-        else None
-    )
-    if original_message is None:
-        raise InvocationError()
-
-    if args.edit:
-        """git rex --edit [commit]"""
-        raw_edited_message = spawn_editor(
-            original_message, filename=".git/COMMIT_EDITMSG"
-        )
-        commit_message = cleanup_message(raw_edited_message)
-    else:
-        """git rex commit"""
-        commit_message = original_message
+    commit_message = get_message_to_execute(args.commit, edit=args.edit)
 
     run_scripts(commit_message)
     git.add_all()
