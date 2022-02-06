@@ -36,6 +36,10 @@ The following commands were executed:
 """
 
 
+class InvocationError(Exception):
+    pass
+
+
 class UnstagedChanges(Exception):
     pass
 
@@ -104,9 +108,11 @@ def main() -> None:
             edit_commit(args.commit, no_commit=args.no_commit)
         else:
             if not args.commit:
-                parser().print_help()
-                sys.exit(64)
+                raise InvocationError()
             reexecute_commit(args.commit, no_commit=args.no_commit)
+    except InvocationError:
+        parser().print_help()
+        sys.exit(64)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")
