@@ -6,7 +6,11 @@ from .bash import BashScript
 CODE_BLOCK = re.compile(r"\s*```(\w*)\s*$")
 
 
-class NoCodeFound(Exception):
+class NoScriptBlockFound(Exception):
+    pass
+
+
+class NoExecutableCodeFound(Exception):
     pass
 
 
@@ -108,7 +112,7 @@ def extract_scripts(message: str) -> Tuple[BashScript, ...]:
             code_blocks.append(BashScript(first_lineno, tuple(code_lines)))
             code_lines.clear()
     if not code_blocks:
-        raise NoCodeFound()
+        raise NoScriptBlockFound()
     return tuple(code_blocks)
 
 
@@ -126,5 +130,5 @@ def cleanup_message(message: str) -> str:
                 continue
         lines.append(f"{line.text}\n")
     if not code_line_found:
-        raise NoCodeFound()
+        raise NoExecutableCodeFound()
     return "".join(lines)

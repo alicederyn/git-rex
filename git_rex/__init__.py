@@ -9,7 +9,8 @@ from .bash import UserCodeError
 from .editor import EditorError, EditorUnset, spawn_editor
 from .log_config import configure_logging
 from .messages import (
-    NoCodeFound,
+    NoExecutableCodeFound,
+    NoScriptBlockFound,
     UnexpectedCodeBlock,
     UnsupportedCodeSyntax,
     UnterminatedCodeBlock,
@@ -36,8 +37,24 @@ The following commands were executed:
 """
 
 
+class InvocationError(Exception):
+    pass
+
+
 class UnstagedChanges(Exception):
     pass
+
+
+def get_message_to_execute(commit: git.Commit, *, edit: bool) -> str:
+    message = commit.message if commit else DEFAULT_COMMIT_TEMPLATE if edit else None
+    if message is None:
+        raise InvocationError()
+
+    if edit:
+        raw_edited_message = spawn_editor(message, filename=".git/COMMIT_EDITMSG")
+        return cleanup_message(raw_edited_message)
+    else:
+        return message
 
 
 def run_scripts(commit_message: str) -> None:
@@ -45,27 +62,13 @@ def run_scripts(commit_message: str) -> None:
         script.execute()
 
 
-def reexecute_commit(commit: git.Commit, *, no_commit: bool) -> None:
-    """git rex commit"""
-    run_scripts(commit.message)
-    git.add_all()
-    if no_commit:
-        git.store_commit_message(commit.message)
-    else:
-        git.commit_with_meta_from(commit)
-
-
-def edit_commit(commit: Optional[git.Commit], *, no_commit: bool) -> None:
-    """git rex --edit [commit]"""
-    original_message = commit.message if commit else DEFAULT_COMMIT_TEMPLATE
-    raw_edited_message = spawn_editor(original_message, filename=".git/COMMIT_EDITMSG")
-    commit_message = cleanup_message(raw_edited_message)
-    run_scripts(commit_message)
-    git.add_all()
+def commit(
+    commit_message: str, original_commit: Optional[git.Commit], *, no_commit: bool
+) -> None:
     if no_commit:
         git.store_commit_message(commit_message)
-    elif commit and commit.message == commit_message:
-        git.commit_with_meta_from(commit)
+    elif original_commit and original_commit.message == commit_message:
+        git.commit_with_meta_from(original_commit)
     else:
         git.commit(commit_message)
 
@@ -90,32 +93,37 @@ def parser() -> ArgumentParser:
     return parser
 
 
+def rex() -> None:
+    args = parser().parse_args()
+    os.chdir(git.top_level())
+
+    is_clean = git.no_unstaged_changes() if args.no_commit else git.is_clean_repo()
+    if not is_clean:
+        raise UnstagedChanges()
+
+    commit_message = get_message_to_execute(args.commit, edit=args.edit)
+
+    run_scripts(commit_message)
+    git.add_all()
+    commit(commit_message, args.commit, no_commit=args.no_commit)
+
+
 def main() -> None:
     configure_logging()
-    args = parser().parse_args()
     try:
-        os.chdir(git.top_level())
-
-        is_clean = git.no_unstaged_changes() if args.no_commit else git.is_clean_repo()
-        if not is_clean:
-            raise UnstagedChanges()
-
-        if args.edit:
-            edit_commit(args.commit, no_commit=args.no_commit)
-        else:
-            if not args.commit:
-                parser().print_help()
-                sys.exit(64)
-            reexecute_commit(args.commit, no_commit=args.no_commit)
+        rex()
+    except InvocationError:
+        parser().print_help()
+        sys.exit(64)
     except UnstagedChanges:
         log.error("cannot reexecute: You have unstaged changes.")
         log.error("Please commit or stash them.")
         sys.exit(64)
-    except NoCodeFound:
-        if args.edit:
-            log.fatal("Aborting commit as no code found to execute")
-        else:
-            log.fatal("No code section found in commit")
+    except NoScriptBlockFound:
+        log.fatal("No code section found in commit")
+        sys.exit(64)
+    except NoExecutableCodeFound:
+        log.fatal("Aborting commit as no code found to execute")
         sys.exit(64)
     except UnsupportedCodeSyntax as e:
         log.fatal("%d: Code sections must specify bash syntax", e.lineno)

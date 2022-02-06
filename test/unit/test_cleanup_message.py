@@ -1,7 +1,7 @@
 import pytest
 
 from git_rex.messages import (
-    NoCodeFound,
+    NoExecutableCodeFound,
     UnexpectedCodeBlock,
     UnsupportedCodeSyntax,
     UnterminatedCodeBlock,
@@ -16,7 +16,7 @@ def test_removes_comments_only_outside_of_code_blocks():
 
 
 def test_no_code_block():
-    with pytest.raises(NoCodeFound):
+    with pytest.raises(NoExecutableCodeFound):
         cleanup_message("Some commit\n\nNo code")
 
 
@@ -40,5 +40,5 @@ def test_label_on_closing_ticks():
 
 
 def test_only_blank_lines_and_comments_in_code():
-    with pytest.raises(NoCodeFound):
+    with pytest.raises(NoExecutableCodeFound):
         cleanup_message("Some commit\n\n```bash\n\n# a comment\n\n```")
