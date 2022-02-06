@@ -10,11 +10,18 @@ class UserCodeError(Exception):
         self.resultcode = resultcode
 
 
-def script_preamble(first_lineno):
+def script_preamble(first_lineno: int, verbose: bool) -> str:
     preamble = [
         "set -eo pipefail",
-        """trap 'echo "error: $((LINENO+(%(offset)d))): """
-        """'"'"'$BASH_COMMAND'"'"' returned status code $?" >&2' ERR""",
+        # Trap errors to output a failure message
+        "trap '("
+        # Disable set -x without outputting to stderr
+        """{ STATUS=$? ; set +x ; } 2>&- ; """
+        # Calculate the line number as it would have been in the original commit message
+        """echo "error: $((LINENO+(%(offset)d))): """
+        """'"'"'$BASH_COMMAND'"'"' returned status code $STATUS" >&2)"""
+        "' ERR",
+        *(["set -x"] if verbose else []),
     ]
     offset = first_lineno - len(preamble) - 1
     return "\n".join(preamble) % dict(offset=offset)
@@ -36,10 +43,10 @@ class BashScript:
             for (lineno, line) in enumerate(self.script, start=self.first_lineno)
         )
 
-    def execute(self) -> None:
+    def execute(self, *, verbose: bool = False) -> None:
         try:
             with open(TEMP_REX_SCRIPT, "w") as f:
-                print(script_preamble(self.first_lineno), file=f)
+                print(script_preamble(self.first_lineno, verbose), file=f)
                 print("\n".join(self.script), file=f)
             resultcode = call(["bash", TEMP_REX_SCRIPT], stdin=DEVNULL)
             if resultcode != 0:

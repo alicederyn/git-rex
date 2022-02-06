@@ -57,9 +57,9 @@ def get_message_to_execute(commit: git.Commit, *, edit: bool) -> str:
         return message
 
 
-def run_scripts(commit_message: str) -> None:
+def run_scripts(commit_message: str, *, verbose: bool) -> None:
     for script in extract_scripts(commit_message):
-        script.execute()
+        script.execute(verbose=verbose)
 
 
 def commit(
@@ -90,6 +90,12 @@ def parser() -> ArgumentParser:
         action="store_true",
         help="Execute commands and stage changes, but do not commit them",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Output each command before executing it",
+    )
     return parser
 
 
@@ -103,7 +109,7 @@ def rex() -> None:
 
     commit_message = get_message_to_execute(args.commit, edit=args.edit)
 
-    run_scripts(commit_message)
+    run_scripts(commit_message, verbose=args.verbose)
     git.add_all()
     commit(commit_message, args.commit, no_commit=args.no_commit)
 

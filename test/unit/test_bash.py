@@ -71,3 +71,31 @@ def test_no_interactive_prompts(temp_working_dir):
 
     file_txt = open("file.txt").read().splitlines()
     assert file_txt == []
+
+
+def test_verbose_script_success(temp_working_dir, capfd: pytest.CaptureFixture[str]):
+    script = BashScript(1, ("echo hi there\ntrue\necho more text",))
+    script.execute(verbose=True)
+    stdout, stderr = (o.splitlines() for o in capfd.readouterr())
+    assert stdout == [
+        "hi there",
+        "more text",
+    ]
+    assert stderr == [
+        "+ echo hi there",
+        "+ true",
+        "+ echo more text",
+    ]
+
+
+def test_verbose_script_failure(temp_working_dir, capfd: pytest.CaptureFixture[str]):
+    script = BashScript(3, ("echo hi there\nfalse\necho more text",))
+    with pytest.raises(UserCodeError):
+        script.execute(verbose=True)
+    stdout, stderr = (o.splitlines() for o in capfd.readouterr())
+    assert stdout == ["hi there"]
+    assert stderr == [
+        "+ echo hi there",
+        "+ false",
+        "error: 4: 'false' returned status code 1",
+    ]
